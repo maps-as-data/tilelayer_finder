@@ -1,0 +1,20 @@
+[tool.poetry]
+name = "tileserver_finder"
+version = "0.1.0"
+description = ""
+authors = ["Rosie Wood <rwood@turing.ac.uk>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+owslib = "^0.29.2"
+pandas = "^1.5.3"
+requests = "^2.31.0"
+pyproj = "^3.6.1"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.scripts]
+tsf_run = "tileserver_finder.run:main"
