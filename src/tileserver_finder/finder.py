@@ -147,12 +147,15 @@ class TileServerFinder:
             The spatial reference system (EPSG code) to request the data in. 
             By default, "urn:x-ogc:def:crs:EPSG:4326".
         """
-        typename = self.data[self.data["Name"]==name]['Typename'].item()
-        print(f"[INFO] Getting metadata for {name} (typename: '{typename}')")
-        XYZ = self.data[self.data["Name"]==name]['XYZ URL'].item()
-        print(f"[INFO] XYZ URL for this layer is: '{XYZ}'")
-        maxZ = self.data[self.data["Name"]==name]['Max Z'].item()
-        print(f"[INFO] Max zoom level for this layer is: {maxZ}")
+        if name in self.data["Name"]:
+            typename = self.data[self.data["Name"]==name]['Typename'].item()
+            print(f"[INFO] Getting metadata for {name} (typename: '{typename}')")
+            XYZ = self.data[self.data["Name"]==name]['XYZ URL'].item()
+            print(f"[INFO] XYZ URL for this layer is: '{XYZ}'")
+            maxZ = self.data[self.data["Name"]==name]['Max Z'].item()
+            print(f"[INFO] Max zoom level for this layer is: {maxZ}")
+        else:
+            raise ValueError(f'"{name}" not found.')
 
         try:
             self.wfs.contents[typename]
