@@ -136,10 +136,10 @@ class TileServerFinder:
             # ensure typename is available on WFS
             for i, typename in tile_data["Typename"].items():
                 if typename not in list(self.wfs.contents):
-                    self.tile_data.drop(i, inplace=True)
+                    tile_data.drop(i, inplace=True)
             for i, typename in group_data["Typename"].items():
                 if typename not in list(self.wfs.contents):
-                    self.group_data.drop(i, inplace=True)
+                    group_data.drop(i, inplace=True)
 
         tile_data.reset_index(inplace=True, names="Name")
         print(f"[INFO] Tile dataframe has {len(tile_data)} values.")
