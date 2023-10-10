@@ -17,7 +17,7 @@ requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.scripts]
-tsf_run = "tilelayer_finder.run:main"
+tlf_run = "tilelayer_finder.run:main"
 
 [tool.ruff]
 select = [
