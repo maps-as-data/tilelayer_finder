@@ -4,10 +4,12 @@ Tilelayer_finder is for finding tilelayers/group layers available via the NLS ti
 
 ## Installation (Poetry)
 
-`git clone https://github.com/rwood-97/tilelayer_finder.git`
-`cd tilelayer_finder`
-`poetry install`
-`poetry shell`
+``` bash
+git clone https://github.com/rwood-97/tilelayer_finder.git
+cd tilelayer_finder
+poetry install
+poetry shell
+```
 
 ## Usage
 
@@ -28,6 +30,8 @@ options:
 ```
 
 ### Interactive (notebooks)
+
+See `example.ipynb` for usage example.
 
 ``` python
 from tilelayer_finder import finder
