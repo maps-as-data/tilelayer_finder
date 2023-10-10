@@ -10,11 +10,18 @@ def main():
         "-c", "--clean", action="store_true", help="Whether to clean data"
     )
     parser.add_argument(
-        "-o",
-        "--output",
+        "-ot",
+        "--tiles-output",
         type=str,
         default="nls_tilelayers.csv",
-        help="Name to use when saving output file",
+        help="Name to use when saving output tilelayer file",
+    )
+    parser.add_argument(
+        "-og",
+        "--groups-output",
+        type=str,
+        default="nls_group_layers.csv",
+        help="Name to use when saving output group layer file",
     )
     parser.add_argument(
         "-n",
@@ -22,7 +29,7 @@ def main():
         nargs="*",
         type=str,
         default=[],
-        help="Name of tilelayer to create metadata for",
+        help="Name(s) of tilelayer(s)/group layer(s) to create metadata for",
     )
     args = parser.parse_args()
 
