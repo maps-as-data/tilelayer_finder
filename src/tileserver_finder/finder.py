@@ -14,7 +14,7 @@ class TileServerFinder:
         self.queries = {}
 
     def get_data(self, clean: bool | None = True):
-        """Gets the data and saves to `self.data`.
+        """Gets the data and saves to `self.tile_data`.
 
         Parameters
         -----------
@@ -23,7 +23,7 @@ class TileServerFinder:
         """
 
         self._find_current_file()
-        self._generate_layers_dict()
+        self._generate_layers_dicts()
         self._extract_data(clean=clean)
 
     def _find_current_file(self):
@@ -35,43 +35,55 @@ class TileServerFinder:
             print(f"[INFO] Current file is: '{current_file}'")
             self.current_file = current_file
 
-    def _generate_layers_dict(self):
-        """Generate a dictionary containing available tilelayers and save to `self.layers_dict`.
+    def _generate_layers_dicts(self):
+        """Generate a dictionary containing available tilelayers and group layers and save to `self.tilelayers_dict` and `self.group_layers_dict`.
         Keys are tilelayer names.
         """
         current_file = self.current_file
 
         with requests.get(current_file) as response:
-            layers = re.findall(r"(?<=overlayLayers =  \[)(.*)(?=\])", response.text)[0]
-            layers_list = re.split(r",\s*", layers)
+            all_layers = re.findall(
+                r"(?<=var)\s*(.*?)\s*=\s*new", response.text
+                )
             all_layers_dict = {
                 layer: re.findall(
                     rf"(?<=var\s{layer}\b)\s+=\s+(.*?)(?=\);)", response.text, re.DOTALL
                 )[0]
-                for layer in layers_list
+                for layer in all_layers
             }
 
-        tile_layers_dict = {
+        tilelayers_dict = {
             k: v
             for k, v in all_layers_dict.items()
             if re.search(r"new\s*ol.layer.Tile\(", v)
         }
 
-        for k, v in tile_layers_dict.items():
-            tile_layers_dict[k] = re.sub(r"\n//.*", "", v)
+        for k, v in tilelayers_dict.items():
+            tilelayers_dict[k] = re.sub(r"\n//.*", "", v)
+        
+        self.tilelayers_dict = tilelayers_dict
+        
+        group_layers_dict = {
+            k: v
+            for k, v in all_layers_dict.items()
+            if re.search(r"new\s*ol.layer.Group\(", v)
+        }
 
-        self.layers_dict = tile_layers_dict
+        for k, v in group_layers_dict.items():
+            group_layers_dict[k] = re.sub(r"\n//.*", "", v)
+        
+        self.group_layers_dict = group_layers_dict
 
     def _extract_data(self, clean: bool | None = True):
-        """Extract data (name, title, typename, XYZ url and maxZ) from `self.layers_dict` and save to `self.data`.
+        """Extract data (name, title, typename, XYZ url, maxZ and layers) from layers dicts and save to `self.tile_data` and `self.group_data`.
 
         Parameters
         -----------
         clean : bool, optional
-            Whether to clean up dataframe by removing duplicate and unavailable layers.
+            Whether to clean up dataframes by removing duplicate and unavailable layers.
         """
-        data_dict = {}
-        for k, v in self.layers_dict.items():
+        tile_data_dict = {}
+        for k, v in self.tilelayers_dict.items():
             title = re.findall(r"(?<=title:)\s*[\"|\'](.*)(?=[\"|\'],)", v)
             source_xyz = re.findall(
                 r"(?<=source:)\s*new\sol.source.XYZ\(\{(.*)(?=\}\),)", v, re.DOTALL
@@ -84,52 +96,101 @@ class TileServerFinder:
                 if len(max_z) == 0:
                     max_z = re.findall(r"(?<=maxZ:)\s*(\d+)", v)
                 typename = re.findall(r"(?<=typename:)\s*[\"|\'](.*)(?=[\"|\'],)", v)
-                data_dict[k] = [
+                tile_data_dict[k] = [
                     value[0] if len(value) != 0 else None
                     for value in [title, typename, xyz, max_z]
                 ]
 
-        data = pd.DataFrame.from_dict(
-            data_dict, orient="index", columns=["Title", "Typename", "XYZ URL", "Max Z"]
+        tile_data = pd.DataFrame.from_dict(
+            tile_data_dict, orient="index", columns=["Title", "Typename", "XYZ URL", "Max Z"]
+        )
+
+        group_data_dict = {}
+        for k, v in self.group_layers_dict.items():
+            title = re.findall(r"(?<=title:)\s*[\"|\'](.*)(?=[\"|\'],)", v)
+            typename = re.findall(r"(?<=typename:)\s*[\"|\'](.*)(?=[\"|\'],)", v)
+            layers = re.findall(r"(?<=layers:)\s*\[\s*(.*)(?=\s*\],)", v)
+            if len(layers) != 0:
+                layers = layers[0].split(",")
+                layers = [layer.strip() for layer in layers] # remove whitespace
+            group_data_dict[k] = [
+                title[0] if len(title) != 0 else None,
+                typename[0] if len(typename) != 0 else None,
+                layers
+            ]
+
+        group_data = pd.DataFrame.from_dict(
+            group_data_dict, orient="index", columns=["Title", "Typename", "Layers"]
         )
 
         if clean:
+            # drop groups with missing layers
+            for i, row in group_data.iterrows():
+                if any(layer not in list(tile_data.index) for layer in row["Layers"]):
+                    group_data.drop(i, inplace=True)
+
             # remove 'nls:WFS' as these tend to be single maps rather than layers
-            data = data[data["Typename"] != "nls:WFS"]
+            tile_data = tile_data[tile_data["Typename"] != "nls:WFS"]
+            group_data = group_data[group_data["Typename"] != "nls:WFS"]
+
             # ensure typename is available on WFS
-            for i, typename in data["Typename"].items():
+            for i, typename in tile_data["Typename"].items():
                 if typename not in list(self.wfs.contents):
-                    data.drop(i, inplace=True)
+                    self.tile_data.drop(i, inplace=True)
+            for i, typename in group_data["Typename"].items():
+                if typename not in list(self.wfs.contents):
+                    self.group_data.drop(i, inplace=True)
 
-        data.reset_index(inplace=True, names="Name")
-        print(f"[INFO] Dataframe has {len(data)} values.")
-        self.data = data
+        tile_data.reset_index(inplace=True, names="Name")
+        print(f"[INFO] Tile dataframe has {len(tile_data)} values.")
+        self.tile_data = tile_data
 
-    def save_data(self, fname: str | None = "./NLS_tilelayers.csv"):
-        """Save extracted data (`self.data`) to csv file.
+        group_data.reset_index(inplace=True, names="Name")
+        print(f"[INFO] Group dataframe has {len(group_data)} values.")
+        self.group_data = group_data
+
+    def save_data(
+        self, 
+        tiles_fname: str | None = "nls_tilelayers.csv", 
+        groups_fname: str | None = "nls_grouplayers.csv"
+        ):
+        """Save extracted data (`self.tile_data` and `self.group_data`) to csv file.
 
         Parameters
         ----------
-        fname : str, optional
+        tiles_fname : str, optional
             The name to use when saving the file (should end in ".csv").
-            By default, "./NLS_tilelayers.csv"
+            By default, "nls_tilelayers.csv"
+        groups_fname : str, optional
+            The name to use when saving the file (should end in ".csv")
+            By default, "nls_grouplayers.csv"
         """
 
-        if not fname.endswith(".csv"):
-            fname = f"{fname}.csv"
-        print(f"[INFO] Saving data to '{fname}'.")
-        self.data.to_csv(fname)
+        if not tiles_fname.endswith(".csv"):
+            tiles_fname = f"{tiles_fname}.csv"
+        print(f"[INFO] Saving tile_data to '{tiles_fname}'.")
+        self.tile_data.to_csv(tiles_fname)
+
+        if not groups_fname.endswith(".csv"):
+            groups_fname = f"{groups_fname}.csv"
+        print(f"[INFO] Saving group_data to '{groups_fname}'.")
+        self.group_data.to_csv(groups_fname)
 
     def load_data(
         self,
-        file_path: str,
+        tiles_fname: str | None = "nls_tilelayers.csv", 
+        groups_fname: str | None = "nls_grouplayers.csv"
     ):
-        """Loads a csv file containing the data (name, title, typename, XYZ url and maxZ).
+        """Loads csv files containing the tilelayer and group layer data.
 
         Parameters
         ----------
-        file_path : str
-            The path to file to load.
+        tiles_fname : str, optional
+            The name of the tilelayer data file.
+            By default, "nls_tilelayers.csv"
+        groups_fname : str, optional
+            The name of the group layer data file.
+            By default, "nls_grouplayers.csv"
 
         Notes
         -----
@@ -137,13 +198,21 @@ class TileServerFinder:
         If your data is over a few months old, it may be worth re-creating your csv file using the ``.get_data()`` method.
         """
 
-        data = pd.read_csv(file_path, index_col=0)
-        self.data = data
+        tile_data = pd.read_csv(tiles_fname, index_col=0)
+        self.tile_data = tile_data
+
+        group_data = pd.read_csv(groups_fname, index_col=0)
+        self.group_data = group_data
 
     def list_tilelayers(self):
         """Print the names and titles of available tilelayers."""
-        tilelayers = list(self.data["Name"])
+        tilelayers = list(self.tile_data["Name"])
         print(*tilelayers, sep="\n")
+
+    def list_group_layers(self):
+        """Print the names and titles of available group layers."""
+        group_layers = list(self.group_data["Name"])
+        print(*group_layers, sep="\n")
 
     def create_metadata_json(
         self,
@@ -151,12 +220,12 @@ class TileServerFinder:
         bbox: tuple | None = None,
         srsname: str | None = "urn:x-ogc:def:crs:EPSG:4326",
     ):
-        """Create a .json file containing the metadata for the named tilelayer.
+        """Create a .json file containing the metadata for the named tilelayer/group layer.
 
         Parameters
         ----------
         name : str
-            The name of the tilelayer whose metadata is to be downloaded.
+            The name of the tilelayer/group layer whose metadata is to be downloaded.
         bbox : Optional[tuple], optional
             The bounding box in the form (minx, miny, maxx, maxy, "EPSG:XXX").
             If None, the bounding box will be looked up for the chosen tilelayer.
@@ -165,15 +234,18 @@ class TileServerFinder:
             The spatial reference system (EPSG code) to request the data in.
             By default, "urn:x-ogc:def:crs:EPSG:4326".
         """
-        if name in self.data["Name"]:
-            typename = self.data[self.data["Name"] == name]["Typename"].item()
+        if name in list(self.tile_data["Name"]):
+            typename = self.tile_data[self.tile_data["Name"] == name]["Typename"].item()
             print(f"[INFO] Getting metadata for {name} (typename: '{typename}')")
-            xyz = self.data[self.data["Name"] == name]["XYZ URL"].item()
+            xyz = self.tile_data[self.tile_data["Name"] == name]["XYZ URL"].item()
             print(f"[INFO] XYZ URL for this layer is: '{xyz}'")
-            max_z = self.data[self.data["Name"] == name]["Max Z"].item()
+            max_z = self.tile_data[self.tile_data["Name"] == name]["Max Z"].item()
             print(f"[INFO] Max zoom level for this layer is: {max_z}")
+        elif name in list(self.group_data["Name"]):
+            typename = self.group_data[self.group_data["Name"] == name]["Typename"].item()
+            print(f"[INFO] Getting metadata for {name} (typename: '{typename}')")
         else:
-            msg = f'"{name}" not found.'
+            msg = f'"{name}" not found in data.'
             raise ValueError(msg)
 
         try:
