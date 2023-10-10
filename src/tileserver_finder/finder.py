@@ -42,9 +42,7 @@ class TileServerFinder:
         current_file = self.current_file
 
         with requests.get(current_file) as response:
-            all_layers = re.findall(
-                r"(?<=var)\s*(.*?)\s*=\s*new", response.text
-                )
+            all_layers = re.findall(r"(?<=var)\s*(.*?)\s*=\s*new", response.text)
             all_layers_dict = {
                 layer: re.findall(
                     rf"(?<=var\s{layer}\b)\s+=\s+(.*?)(?=\);)", response.text, re.DOTALL
@@ -60,9 +58,9 @@ class TileServerFinder:
 
         for k, v in tilelayers_dict.items():
             tilelayers_dict[k] = re.sub(r"\n//.*", "", v)
-        
+
         self.tilelayers_dict = tilelayers_dict
-        
+
         group_layers_dict = {
             k: v
             for k, v in all_layers_dict.items()
@@ -71,7 +69,7 @@ class TileServerFinder:
 
         for k, v in group_layers_dict.items():
             group_layers_dict[k] = re.sub(r"\n//.*", "", v)
-        
+
         self.group_layers_dict = group_layers_dict
 
     def _extract_data(self, clean: bool | None = True):
@@ -102,7 +100,9 @@ class TileServerFinder:
                 ]
 
         tile_data = pd.DataFrame.from_dict(
-            tile_data_dict, orient="index", columns=["Title", "Typename", "XYZ URL", "Max Z"]
+            tile_data_dict,
+            orient="index",
+            columns=["Title", "Typename", "XYZ URL", "Max Z"],
         )
 
         group_data_dict = {}
@@ -112,11 +112,11 @@ class TileServerFinder:
             layers = re.findall(r"(?<=layers:)\s*\[\s*(.*)(?=\s*\],)", v)
             if len(layers) != 0:
                 layers = layers[0].split(",")
-                layers = [layer.strip() for layer in layers] # remove whitespace
+                layers = [layer.strip() for layer in layers]  # remove whitespace
             group_data_dict[k] = [
                 title[0] if len(title) != 0 else None,
                 typename[0] if len(typename) != 0 else None,
-                layers
+                layers,
             ]
 
         group_data = pd.DataFrame.from_dict(
@@ -150,10 +150,10 @@ class TileServerFinder:
         self.group_data = group_data
 
     def save_data(
-        self, 
-        tiles_fname: str | None = "nls_tilelayers.csv", 
-        groups_fname: str | None = "nls_grouplayers.csv"
-        ):
+        self,
+        tiles_fname: str | None = "nls_tilelayers.csv",
+        groups_fname: str | None = "nls_grouplayers.csv",
+    ):
         """Save extracted data (`self.tile_data` and `self.group_data`) to csv file.
 
         Parameters
@@ -178,8 +178,8 @@ class TileServerFinder:
 
     def load_data(
         self,
-        tiles_fname: str | None = "nls_tilelayers.csv", 
-        groups_fname: str | None = "nls_grouplayers.csv"
+        tiles_fname: str | None = "nls_tilelayers.csv",
+        groups_fname: str | None = "nls_grouplayers.csv",
     ):
         """Loads csv files containing the tilelayer and group layer data.
 
@@ -242,7 +242,9 @@ class TileServerFinder:
             max_z = self.tile_data[self.tile_data["Name"] == name]["Max Z"].item()
             print(f"[INFO] Max zoom level for this layer is: {max_z}")
         elif name in list(self.group_data["Name"]):
-            typename = self.group_data[self.group_data["Name"] == name]["Typename"].item()
+            typename = self.group_data[self.group_data["Name"] == name][
+                "Typename"
+            ].item()
             print(f"[INFO] Getting metadata for {name} (typename: '{typename}')")
         else:
             msg = f'"{name}" not found in data.'
