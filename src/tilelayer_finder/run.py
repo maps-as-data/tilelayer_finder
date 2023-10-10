@@ -1,6 +1,6 @@
 from argparse import ArgumentParser
 
-from tileserver_finder import finder
+from tilelayer_finder import finder
 
 
 def main():
@@ -33,8 +33,8 @@ def main():
     )
     args = parser.parse_args()
 
-    # run tileserver_finder
-    tsf = finder.TileServerFinder()
+    # run tilelayer_finder
+    tsf = finder.TileLayerFinder()
     tsf.get_data(clean=args.clean)
     tsf.save_data(fname=args.output)
 

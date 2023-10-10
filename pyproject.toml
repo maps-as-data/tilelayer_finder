@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "tileserver_finder"
+name = "tilelayer_finder"
 version = "0.1.0"
 description = ""
 authors = ["Rosie Wood <rwood@turing.ac.uk>"]
@@ -17,7 +17,7 @@ requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.scripts]
-tsf_run = "tileserver_finder.run:main"
+tsf_run = "tilelayer_finder.run:main"
 
 [tool.ruff]
 select = [

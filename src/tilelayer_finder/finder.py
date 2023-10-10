@@ -5,11 +5,11 @@ import requests
 from owslib.wfs import WebFeatureService
 
 
-class TileServerFinder:
-    """For finding tileservers available from the NLS."""
+class TileLayerFinder:
+    """For finding tilelayers available from the NLS."""
 
     def __init__(self):
-        """For finding tileservers available from the NLS."""
+        """For finding tilelayers available from the NLS."""
         self.get_wfs()
         self.queries = {}
 
