@@ -36,7 +36,7 @@ def main():
     # run tilelayer_finder
     tsf = finder.TileLayerFinder()
     tsf.get_data(clean=args.clean)
-    tsf.save_data(fname=args.output)
+    tsf.save_data(tiles_fname=args.tiles_output, groups_fname=args.groups_output)
 
     # save metadata if any names are passed
     if len(args.name) > 0:
