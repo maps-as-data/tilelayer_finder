@@ -1,22 +1,25 @@
-[tool.poetry]
+[project]
 name = "tilelayer_finder"
 version = "0.1.0"
 description = ""
-authors = ["Rosie Wood <rwood@turing.ac.uk>"]
+authors = [
+  { name = "Rosie Wood", email="rwood@turing.ac.uk>" },
+]
 readme = "README.md"
+requires-python = ">=3.10"
 
-[tool.poetry.dependencies]
-python = "^3.11"
-owslib = "^0.29.2"
-pandas = "^1.5.3"
-requests = "^2.31.0"
-pyproj = "^3.6.1"
+dependencies = [
+  "owslib>=0.29.2",
+  "pandas<=1.5.3",
+  "requests<=2.31.0",
+  "pyproj<=3.6.1",
+]
 
 [build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
 
-[tool.poetry.scripts]
+[project.scripts]
 tlf_run = "tilelayer_finder.run:main"
 
 [tool.ruff]
