@@ -3,7 +3,7 @@ name = "tilelayer_finder"
 version = "0.1.0"
 description = ""
 authors = [
-  { name = "Rosie Wood", email="rwood@turing.ac.uk>" },
+  { name = "Rosie Wood", email="rwood@turing.ac.uk" },
 ]
 readme = "README.md"
 requires-python = ">=3.10"
