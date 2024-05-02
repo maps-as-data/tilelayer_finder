@@ -2,7 +2,19 @@
 
 Tilelayer_finder is for finding tilelayers/group layers available via the NLS tileserver and creating `metadata.json` files for them (for use in MapReader).
 
-## Installation (Poetry)
+## Installation
+
+### Pip install (use conda or other virtual env if you prefer)
+
+``` bash
+git clone https://github.com/rwood-97/tilelayer_finder.git
+cd tilelayer_finder
+conda create -n tilelayer_finder python=3.11
+conda activate tilelayer_finder
+pip install .
+```
+
+### Poetry install
 
 ``` bash
 git clone https://github.com/rwood-97/tilelayer_finder.git
