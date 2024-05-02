@@ -1,8 +1,10 @@
 # tilelayer_finder
 
-Tilelayer_finder is for finding tilelayers/group layers available via the NLS tileserver and creating `metadata.json` files for them (for use in MapReader).
+`tilelayer_finder` is a small package for finding tilelayers/group layers available via the NLS tileserver and creating `metadata.json` files for them (for use in MapReader).
 
 ## Installation
+
+> **NOTE 02/05/2024**: I've just removed the need to use poetry to run this, if you had previously installed with poetry you might need to re-install!
 
 ### Pip install (use conda or other virtual env if you prefer)
 
