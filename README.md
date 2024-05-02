@@ -14,15 +14,6 @@ conda activate tilelayer_finder
 pip install .
 ```
 
-### Poetry install
-
-``` bash
-git clone https://github.com/rwood-97/tilelayer_finder.git
-cd tilelayer_finder
-poetry install
-poetry shell
-```
-
 ## Usage
 
 ### CLI
