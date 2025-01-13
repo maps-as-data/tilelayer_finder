@@ -1,4 +1,4 @@
-# tilelayer_finder
+# Tilelayer Finder
 
 `tilelayer_finder` is a small package for finding tilelayers/group layers available via the NLS tileserver and creating `metadata.json` files for them (for use in MapReader).
 
